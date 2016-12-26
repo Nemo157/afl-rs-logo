@@ -1,6 +1,7 @@
-# afl-logo-rs
+# afl-rs-logo
 
-An attempt at creating a logo for [afl.rs][] similar to the afl logo.
+An attempt at creating a logo for [afl.rs][] similar to the [(unofficial?) afl
+logo][afl-logo].
 
 ## Running
 
@@ -39,3 +40,4 @@ docker exec -it afl target/debug/test_cases_to_gif in/rust-logo-blk.jpg out/queu
 ```
 
 [afl.rs]: https://github.com/frewsxcv/afl.rs
+[afl-logo]: http://lcamtuf.coredump.cx/afl/rabbit.gif
