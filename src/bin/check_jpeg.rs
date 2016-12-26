@@ -1,8 +1,6 @@
 #![feature(plugin)]
 #![plugin(afl_plugin)]
 
-#![feature(question_mark)]
-
 extern crate afl;
 extern crate jpeg_decoder;
 
