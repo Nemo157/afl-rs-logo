@@ -25,6 +25,7 @@ struct Config {
     frames: usize,
 }
 
+#[derive(Clone)]
 struct Image {
     path: PathBuf,
     info: jpeg::ImageInfo,
@@ -62,11 +63,12 @@ impl Image {
         })
     }
 
-    fn distance_from(&self, other: &Image) -> u32 {
+    fn distance_from(&self, other: &Image) -> u64 {
         self.data.iter()
             .zip(other.data.iter())
-            .map(|(a, b)| if a == b { 0 } else { 1 })
-            .sum::<u32>()
+            .map(|(&a, &b)| (a as i64, b as i64))
+            .map(|(a, b)| (a - b) * (a - b))
+            .sum::<i64>() as u64
     }
 
     fn frame(self) -> gif::Frame<'static> {
@@ -105,7 +107,7 @@ fn main() {
         initial: matches.value_of("initial").expect("required").into(),
         input: matches.value_of("input").expect("required").into(),
         output: matches.value_of("output").expect("required").into(),
-        frames: 200,
+        frames: 100,
     };
 
     let initial = Image::load(config.initial).expect("Need this input file");
@@ -132,20 +134,40 @@ fn main() {
 
     println!("Choosing frames to use");
 
+    // First, get the images that are most like the initial image, with an extra
+    // 50% on top of how many will be in the output gif
+    images.sort_by_key(|image| image.distance_from(&initial));
+    images.truncate(config.frames + config.frames / 2);
+
+    // Then do a greedy walk through the images from the initial one based on
+    // distance from the current image, skipping any identical images
     let mut chosen = Vec::with_capacity(config.frames);
-    chosen.push(initial);
+    chosen.push(initial.clone());
     while chosen.len() < config.frames && !images.is_empty() {
+        let local = |image: &Image, chosen: &[Image]| {
+            image.distance_from(&chosen[chosen.len() - 1])
+        };
+        let global = |image: &Image| {
+            image.distance_from(&initial)
+        };
+        let distance = |image: &Image, chosen: &[Image]| {
+            local(image, chosen) * 16 + global(image)
+        };
         let index = images.iter()
             .enumerate()
-            .min_by_key(|&(_, image)| image.distance_from(&chosen[chosen.len() - 1]))
+            .min_by_key(|&(_, image)| distance(image, &chosen))
             .map(|(index, _)| index)
             .unwrap();
-        chosen.push(images.swap_remove(index));
+        let image = images.swap_remove(index);
+        if local(&image, &chosen) > 0 {
+            println!("distance (global, local, total): {:?}", (global(&image), local(&image, &chosen), distance(&image, &chosen)));
+            chosen.push(image);
+        }
     }
 
     println!("Chosen {} frames to use", chosen.len());
 
-    let mut rgb_palette = Vec::with_capacity(256);
+    let mut rgb_palette = Vec::with_capacity(256 * 3);
     for i in 0...255 {
         rgb_palette.extend([i, i, i].iter());
     }
