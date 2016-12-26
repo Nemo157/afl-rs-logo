@@ -1,0 +1,76 @@
+[root]
+name = "afl-rs-logo"
+version = "0.1.0"
+dependencies = [
+ "afl 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "afl-plugin 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jpeg-decoder 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "afl"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "afl-sys 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "gcc 0.3.40 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "afl-plugin"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "gcc 0.3.40 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quale 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "afl-sys"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "gcc 0.3.40 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "byteorder"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "gcc"
+version = "0.3.40"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "jpeg-decoder"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "byteorder 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "libc"
+version = "0.2.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "quale"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "libc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[metadata]
+"checksum afl 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "3f1c61ca800a28582b60f6a46499bf9f3074600079dd0237193e7b7b09dd6f0c"
+"checksum afl-plugin 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "4bcdabd34757f7050dcd8b27a6a9445be0c68bf2da3a5cf7e105091ff2506b80"
+"checksum afl-sys 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "2d5ece60f54176799171a28d406f5512582541652cefbc16d8d45dbfa074374e"
+"checksum byteorder 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)" = "0fc10e8cc6b2580fda3f36eb6dc5316657f812a3df879a44a66fc9f0fdbc4855"
+"checksum gcc 0.3.40 (registry+https://github.com/rust-lang/crates.io-index)" = "872db9e59486ef2b14f8e8c10e9ef02de2bccef6363d7f34835dedb386b3d950"
+"checksum jpeg-decoder 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)" = "f5c064189dd32804b645d90406c24c23b5feed62dcf31bf3a97763ff20f5d689"
+"checksum libc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)" = "a51822fc847e7a8101514d1d44e354ba2ffa7d4c194dcab48870740e327cac70"
+"checksum quale 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c46811c513cc64cceb23adc27892b3b3470c1790de117610221b97071de8bc8c"

@@ -1,0 +1,9 @@
+[package]
+name = "afl-rs-logo"
+version = "0.1.0"
+authors = ["Wim Looman <wim@nemo157.com>"]
+
+[dependencies]
+jpeg-decoder = { version = "0.1.10", default-features = false }
+afl = "0.1"
+afl-plugin = "0.1"
