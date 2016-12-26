@@ -1,5 +1,6 @@
 #![feature(question_mark)]
 #![feature(iter_arith)]
+#![feature(inclusive_range_syntax)]
 
 extern crate jpeg_decoder;
 extern crate gif;
@@ -7,6 +8,7 @@ extern crate clap;
 
 use std::fs::{ self, File };
 use std::path::PathBuf;
+use std::borrow::Cow;
 
 use jpeg_decoder as jpeg;
 use gif::SetParameter;
@@ -66,22 +68,15 @@ impl Image {
             .map(|(a, b)| if a == b { 0 } else { 1 })
             .sum::<u32>()
     }
-}
 
-impl Into<gif::Frame<'static>> for Image {
-    fn into(self) -> gif::Frame<'static> {
-        let data = match self.info.pixel_format {
-            jpeg::PixelFormat::RGB24 => self.data,
-            jpeg::PixelFormat::CMYK32 => unimplemented!(),
-            jpeg::PixelFormat::L8 => {
-                let mut data = Vec::with_capacity(self.data.len() * 3);
-                for c in self.data {
-                    data.extend([c, c, c].iter());
-                }
-                data
-            }
-        };
-        gif::Frame::from_rgb(self.info.width, self.info.height, &data)
+    fn frame(self) -> gif::Frame<'static> {
+        assert!(self.info.pixel_format == jpeg::PixelFormat::L8);
+        gif::Frame {
+            width: self.info.width,
+            height: self.info.height,
+            buffer: Cow::Owned(self.data),
+            ..gif::Frame::default()
+        }
     }
 }
 
@@ -130,7 +125,7 @@ fn main() {
 
     let mut images = files.into_iter()
         .filter_map(Image::load)
-        .filter(|image| (image.info.width, image.info.height) == (width, height))
+        .filter(|image| image.info == initial.info)
         .collect::<Vec<_>>();
 
     println!("Loaded {} of {} files", images.len(), file_count);
@@ -148,18 +143,25 @@ fn main() {
         chosen.push(images.swap_remove(index));
     }
 
-    let chosen_count = chosen.len();
     println!("Chosen {} frames to use", chosen.len());
+
+    let mut rgb_palette = Vec::with_capacity(256);
+    for i in 0...255 {
+        rgb_palette.extend([i, i, i].iter());
+    }
 
     println!("Writing to {:?}", config.output);
 
     let mut image = File::create(config.output).expect("Need this output file");
-    let mut encoder = gif::Encoder::new(&mut image, width, height, &[])
+    let mut encoder = gif::Encoder::new(&mut image, width, height, &rgb_palette)
         .expect("What could go wrong?");
     encoder.set(gif::Repeat::Infinite).expect("What could go wrong?");
 
+    print!("Writing {} frames", chosen.len());
     for (i, image) in chosen.into_iter().enumerate() {
-        println!("Writing frame {}/{} from {:?}", i + 1, chosen_count, image.path);
-        encoder.write_frame(&image.into()).expect("What could go wrong?");
+        if i % 10 == 0 { println!(""); print!("   "); }
+        print!(" {:3}..", i);
+        encoder.write_frame(&image.frame()).expect("What could go wrong?");
     }
+    println!("");
 }
