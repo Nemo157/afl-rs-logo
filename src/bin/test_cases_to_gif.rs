@@ -1,9 +1,9 @@
 #![feature(question_mark)]
+#![feature(iter_arith)]
 
 extern crate jpeg_decoder;
 extern crate gif;
 extern crate clap;
-extern crate rand;
 
 use std::fs::{ self, File };
 use std::path::PathBuf;
@@ -20,13 +20,13 @@ struct Config {
     initial: PathBuf,
     input: PathBuf,
     output: PathBuf,
+    frames: usize,
 }
 
 struct Image {
     path: PathBuf,
     info: jpeg::ImageInfo,
     data: Vec<u8>,
-    score: i32,
 }
 
 impl<V, E> LogError for Result<V, E> where E: std::error::Error {
@@ -57,8 +57,14 @@ impl Image {
             path: path,
             info: decoder.info().unwrap(),
             data: maybe!(decoder.decode().ok_or_log()),
-            score: rand::random::<u16>() as i32, // -1,
         })
+    }
+
+    fn distance_from(&self, other: &Image) -> u32 {
+        self.data.iter()
+            .zip(other.data.iter())
+            .map(|(a, b)| if a == b { 0 } else { 1 })
+            .sum::<u32>()
     }
 }
 
@@ -84,7 +90,7 @@ fn main() {
         .args(&[
             clap::Arg::with_name("initial")
                  .value_name("FILE")
-                 .help("The initial file to get the size from and base image distance off")
+                 .help("The initial file to start the gif from")
                  .required(true)
                  .takes_value(true),
             clap::Arg::with_name("input")
@@ -104,6 +110,7 @@ fn main() {
         initial: matches.value_of("initial").expect("required").into(),
         input: matches.value_of("input").expect("required").into(),
         output: matches.value_of("output").expect("required").into(),
+        frames: 200,
     };
 
     let initial = Image::load(config.initial).expect("Need this input file");
@@ -123,17 +130,23 @@ fn main() {
 
     let mut images = files.into_iter()
         .filter_map(Image::load)
+        .filter(|image| (image.info.width, image.info.height) == (width, height))
         .collect::<Vec<_>>();
 
     println!("Loaded {} of {} files", images.len(), file_count);
 
     println!("Choosing frames to use");
 
-    // TODO: actually choose
-    images.sort_by(|a, b| b.score.cmp(&a.score));
-    let chosen = images.into_iter()
-        .take(10)
-        .collect::<Vec<_>>();
+    let mut chosen = Vec::with_capacity(config.frames);
+    chosen.push(initial);
+    while chosen.len() < config.frames && !images.is_empty() {
+        let index = images.iter()
+            .enumerate()
+            .min_by_key(|&(_, image)| image.distance_from(&chosen[chosen.len() - 1]))
+            .map(|(index, _)| index)
+            .unwrap();
+        chosen.push(images.swap_remove(index));
+    }
 
     let chosen_count = chosen.len();
     println!("Chosen {} frames to use", chosen.len());
@@ -145,14 +158,8 @@ fn main() {
         .expect("What could go wrong?");
     encoder.set(gif::Repeat::Infinite).expect("What could go wrong?");
 
-    println!("Writing initial frame from {:?}", initial.path);
-
-    encoder.write_frame(&initial.into()).expect("What could go wrong?");
-
     for (i, image) in chosen.into_iter().enumerate() {
-        if (image.info.width, image.info.height) == (width, height) {
-            println!("Writing frame {}/{} from {:?} (score {})", i, chosen_count, image.path, image.score);
-            encoder.write_frame(&image.into()).expect("What could go wrong?");
-        }
+        println!("Writing frame {}/{} from {:?}", i + 1, chosen_count, image.path);
+        encoder.write_frame(&image.into()).expect("What could go wrong?");
     }
 }
