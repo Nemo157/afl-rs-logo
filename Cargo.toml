@@ -7,3 +7,5 @@ authors = ["Wim Looman <wim@nemo157.com>"]
 jpeg-decoder = { version = "0.1.10", default-features = false }
 afl = "0.1"
 afl-plugin = "0.1"
+gif = "0.9.0"
+clap = "2.14.0"
