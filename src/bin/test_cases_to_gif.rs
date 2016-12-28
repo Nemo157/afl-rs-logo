@@ -96,36 +96,15 @@ fn rescale(image: Image, info: jpeg::ImageInfo) -> Option<Image> {
 
     let data = {
         let image = &image;
-        let info = &info;
-
-        fn pixel(image: &Image, x: f64, y: f64) -> f64 {
-            let (x, y) = (x as usize, y as usize);
-            if x == image.info.width as usize || y == image.info.height as usize {
-                0.0
-            } else if x > image.info.width as usize || y > image.info.height as usize {
-                panic!()
-            } else {
-                image.data[x + y * image.info.width as usize] as f64
-            }
-        }
-
-        (0..info.width as usize).flat_map(move |x| {
-            let x = (x as f64 / info.width as f64) * image.info.width as f64;
-            let (x1, x2) = (x.floor(), x.floor() + 1.0);
-            (0..info.height as usize).map(move |y| {
-                let y = (y as f64 / info.height as f64) * image.info.height as f64;
-                let (y1, y2) = (y.floor(), y.floor() + 1.0);
-
-                let (p11, p12, p21, p22) = (pixel(image, x1, y1), pixel(image, x1, y2), pixel(image, x2, y1), pixel(image, x2, y2));
-
-                let pxy = (
-                    (p11 * (x2 - x) + p21 * (x - x1)) * (y2 - y)
-                    + (p12 * (x2 - x) + p22 * (x - x1)) * (y - y1)
-                ) / ((x2 - x1) * (y2 - y1));
-
-                pxy.round() as u8
+        (0..info.width as usize).flat_map(move |y| {
+            let mut y = ((y as f64 / info.height as f64) * image.info.height as f64).round() as usize;
+            if y == image.info.height as usize { y -= 1; }
+            (0..info.height as usize).map(move |x| {
+                let mut x = ((x as f64 / info.width as f64) * image.info.width as f64).round() as usize;
+                if x == image.info.width as usize { x -= 1; }
+                image.data[x + y * image.info.width as usize]
             })
-        }).collect::<Vec<u8>>()
+        }).collect()
     };
 
     Some(Image { path: image.path, info: info, data: data })
