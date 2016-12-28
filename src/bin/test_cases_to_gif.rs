@@ -6,6 +6,7 @@ extern crate jpeg_decoder;
 extern crate gif;
 extern crate clap;
 
+use std::iter;
 use std::fs::{ self, File };
 use std::path::PathBuf;
 use std::borrow::Cow;
@@ -135,7 +136,7 @@ fn main() {
         initial: matches.value_of("initial").expect("required").into(),
         input: matches.value_of("input").expect("required").into(),
         output: matches.value_of("output").expect("required").into(),
-        frames: 100,
+        frames: 30,
     };
 
     let initial = Image::load(config.initial).expect("Need this input file");
@@ -160,17 +161,11 @@ fn main() {
 
     println!("Loaded {} of {} files", images.len(), file_count);
 
-    println!("Choosing frames to use");
-
-    // First, get the images that are most like the initial image, with an extra
-    // 50% on top of how many will be in the output gif
-    images.sort_by_key(|image| image.distance_from(&initial));
-    images.truncate(config.frames + config.frames / 2);
-
-    // Then do a greedy walk through the images from the initial one based on
+    print!("Choosing frames to use");
+    // Do a greedy walk through the images from the initial one based on
     // distance from the current image, skipping any identical images
     let mut chosen = Vec::with_capacity(config.frames);
-    chosen.push(initial.clone());
+    chosen.extend(iter::repeat(initial.clone()).take(10));
     while chosen.len() < config.frames && !images.is_empty() {
         let local = |image: &Image, chosen: &[Image]| {
             image.distance_from(&chosen[chosen.len() - 1])
@@ -179,7 +174,7 @@ fn main() {
             image.distance_from(&initial)
         };
         let distance = |image: &Image, chosen: &[Image]| {
-            local(image, chosen) * 16 + global(image)
+            local(image, chosen) / 2 + global(image)
         };
         let index = images.iter()
             .enumerate()
@@ -188,11 +183,12 @@ fn main() {
             .unwrap();
         let image = images.swap_remove(index);
         if local(&image, &chosen) > 0 {
-            println!("distance (global, local, total): {:?}", (global(&image), local(&image, &chosen), distance(&image, &chosen)));
+            if chosen.len() % 10 == 0 { println!(""); print!("   "); }
             chosen.push(image);
+            print!(" {:3}..", chosen.len());
         }
     }
-
+    println!("");
     println!("Chosen {} frames to use", chosen.len());
 
     let mut rgb_palette = Vec::with_capacity(256 * 3);
@@ -210,7 +206,7 @@ fn main() {
     print!("Writing {} frames", chosen.len());
     for (i, image) in chosen.into_iter().enumerate() {
         if i % 10 == 0 { println!(""); print!("   "); }
-        print!(" {:3}..", i);
+        print!(" {:3}..", i + 1);
         encoder.write_frame(&image.frame()).expect("What could go wrong?");
     }
     println!("");
