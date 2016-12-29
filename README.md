@@ -30,10 +30,6 @@ docker exec -it afl afl-fuzz -i in -o out target/release/check_jpeg
 
 ### Choosing images and putting them into a gif
 
-WIP: Need to implement the choosing and ordering stage still, for now you can
-manually filter the `out/queue` folder for interesting looking images and get
-something that sorta works.
-
 ```sh
 # Generate the gif from the test cases
 docker exec -it afl target/release/test_cases_to_gif in/rust-logo-blk.jpg out/queue temp.gif
